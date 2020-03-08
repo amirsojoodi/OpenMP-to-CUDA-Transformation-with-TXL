@@ -25,6 +25,8 @@ Some specifications are taken into account:
 |5|`#pragma omp atomic`|CUDA atomic instructions|
 |6|`omp_get_thread_num()`|Calculate thread Id: `threadIdx.x + blockDim.x * blockId.x`|
 
+3. There are other OpenMP features that we can investigate which can be found [here](https://www.openmp.org/wp-content/uploads/OpenMP4.0.0.Examples.pdf).
+
 ## Milestones
 - Write C grammar extension for OpenMP
 - Tacke each of the directives and instructions of OpenMP discribed in the table
@@ -48,4 +50,3 @@ Some specifications are taken into account:
 <a name="myfootnote5">5</a>: Device capabilities and their features can be found [here](https://en.wikipedia.org/wiki/CUDA).
 
 <a name="myfootnote6">6</a>: More information can be found [here](https://devblogs.nvidia.com/unified-memory-in-cuda-6/).
-
