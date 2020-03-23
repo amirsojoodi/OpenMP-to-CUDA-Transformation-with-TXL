@@ -1,3 +1,6 @@
+sampleOpenMP
+sampleCuda
+
 # Prerequisites
 *.d
 
