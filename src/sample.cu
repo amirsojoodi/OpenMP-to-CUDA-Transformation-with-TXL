@@ -1,3 +1,9 @@
+#*******************************************************************
+# sample.cu
+# 
+# A simple array initialization in CUDA
+#*******************************************************************
+
 #include<stdlib.h>
 #include<omp.h>
 #include<stdio.h>
