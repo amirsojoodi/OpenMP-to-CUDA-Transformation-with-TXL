@@ -1,3 +1,9 @@
+#*******************************************************************
+# sample.c
+# 
+# A simple array initialization in OpenMP
+#*******************************************************************
+
 #include<stdlib.h>
 #include<omp.h>
 #include<stdio.h>
