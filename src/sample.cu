@@ -3,6 +3,7 @@
 #include<stdio.h>
 
 #define SIZE 10000
+#define BLOCK_SIZE 64
 
 __global__ void kernel(int *array, int size){
 	
@@ -20,9 +21,9 @@ int main(){
 
 	cudaMallocManaged(&array, size * sizeof(int));
 	
-	dim3 blockDime(blockSize);
+	dim3 blockDime(BLOCK_SIZE);
 	// Compute ceil(size/blockSize)
-	dim3 gridDime((size - 1)/blockSize + 1); 
+	dim3 gridDime((size - 1)/BLOCK_SIZE + 1); 
 
 	kernel<<<gridDime, blockDime>>>(array, size);	
 	cudaDeviceSynchronize();

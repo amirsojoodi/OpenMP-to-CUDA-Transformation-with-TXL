@@ -11,7 +11,7 @@ int main(){
 	array = (int *)malloc(size * sizeof(int));
 
 	#pragma omp parallel
-	for(int i = 0; i < SIZE; i++){
+	for(int i = 0; i < size; i++){
 		array[i] = i;
 	}
 
