@@ -13,10 +13,10 @@
 
 __global__ void kernel(int *array, int size){
 	
-	int id = blockIdx.x * blockDim.x + threadIdx.x;
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
 
-	if (id < size) {
-		array[id] = id;
+	if (i < size) {
+		array[i] = i;
 	}
 }
 
