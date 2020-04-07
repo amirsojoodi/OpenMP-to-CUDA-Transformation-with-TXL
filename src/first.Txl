@@ -33,15 +33,15 @@ function prependExtras
         'int 'main () 
 	    B [block]
 	    
-%	construct KernelFuntion [function_definition_or_declaration]
-%		'void 'kernel (xxx){
-%			some kernel stuff
-%		}
+	construct KernelFuntion [function_definition_or_declaration]
+		'void 'kernel(){
+			;
+		}
 	construct Def [function_definition_or_declaration]
 		'#define foo 10
     
 	export Extras
-    	Extras [. Def] % [. KernelFunction] 
+    	Extras [. Def] %[. KernelFunction] 
 %
 %	construct xyz [stirnglit]
 %		_ [putp Extras]
@@ -56,16 +56,16 @@ function doTransform
     by
 		B [resolve_malloc]
 		[resolve_free]
-%		[rule 3]
+		[resolve_pragma_omp_for]
 end function
 
 rule resolve_malloc
-	replace [expression_statement]
+	replace [simple_statement]
 		Id[id] Op[assignment_operator] CastOp[cast_operator] Expr[unary_expression]
 	deconstruct * Expr
-		'malloc ExpressionExtension[repeat postfix_extension]
+		'malloc(OrigArgs[list argument_expression])		
 	by
-		Id Op CastOp 'cudaMallocManaged ExpressionExtension
+		'cudaMallocManaged(&Id, OrigArgs)
 end rule
 
 rule resolve_free
@@ -74,3 +74,27 @@ rule resolve_free
 	by
 		'cudaFree(MacroArgs)
 end rule
+
+rule resolve_pragma_omp_for
+	replace [repeat declaration_or_statement]
+		Pragma [declaration_or_statement]
+		ForLoop [declaration_or_statement]
+	deconstruct Pragma
+		'#pragma omp parallel
+	deconstruct ForLoop
+		ForStatement[for_statement]
+	by
+		ForLoop
+end rule
+
+%(rule resolve_pragma_omp_for
+	replace [declaration_or_statement]
+		'#pragma omp parallel
+	by
+		'#pragma
+end rule)%
+
+
+
+
+

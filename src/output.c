@@ -18,7 +18,7 @@ int main () {
         array[i] = i;
     }
     printf ("Array[%d] = %d", size - 1, array [size - 1]);
-    cudaFree (array);
+    free (array);
     return 0;
 }
 
