@@ -33,7 +33,7 @@ function prependExtras
         'int 'main () 
 	    B [block]
 	    
-	construct KernelFuntion [function_definition_or_declaration]
+	construct KernelFunction [function_definition_or_declaration]
 		'void 'kernel(){
 			;
 		}
@@ -56,7 +56,7 @@ function doTransform
     by
 		B [resolve_malloc]
 		[resolve_free]
-		[resolve_pragma_omp_for]
+		[add_kernel_function]
 end function
 
 rule resolve_malloc
@@ -75,16 +75,40 @@ rule resolve_free
 		'cudaFree(MacroArgs)
 end rule
 
-rule resolve_pragma_omp_for
-	replace [repeat declaration_or_statement]
-		Pragma [declaration_or_statement]
-		ForLoop [declaration_or_statement]
-	deconstruct Pragma
-		'#pragma omp parallel
+rule add_kernel_function
+	replace $ [repeat declaration_or_statement]
+		Pragma [preprocessor]
+		ForLoop [for_statement]
+		Rest [repeat declaration_or_statement]
+	construct PragmaStr [stringlit]
+		_ [quote Pragma]
+	where
+		PragmaStr [grep 'pragma][grep 'omp][grep 'parallel]
 	deconstruct ForLoop
-		ForStatement[for_statement]
+		'for (D [decl_specifiers] Init[list init_declarator+] '; Condition[conditional_expression] '; Step[opt expression_list] ) 
+			SubStatement[sub_statement]
+	%	'for ( [decl_specifiers] [list init_declarator+] '; [opt expression_list] '; [opt expression_list] ) [sub_statement]
+	deconstruct * [reference_id] Init
+		Var [id] 
+	deconstruct Condition
+		E1 [shift_expression] Op [relational_operator] E2 [shift_expression]
+	deconstruct * [postfix_expression] SubStatement
+		ArrayName [id] '[ A [assignment_expression] '] 
+	construct KernelFunction [function_definition_or_declaration]
+		'__global__ 'void 'kernel('int* ArrayName, 'int 's){
+            'int Var '= 'blockIdx.'x '* 'blockDim.'x '+ 'threadIdx.'x;
+
+			'if (Var < 's)
+				SubStatement
+        }
+
+	import  Extras [repeat function_definition_or_declaration]
+	export Extras 
+		Extras [. KernelFunction]
 	by
+		Pragma
 		ForLoop
+		Rest
 end rule
 
 %(rule resolve_pragma_omp_for
