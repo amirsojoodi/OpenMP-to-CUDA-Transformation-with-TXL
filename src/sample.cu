@@ -11,12 +11,12 @@
 #define SIZE 10000
 #define BLOCK_SIZE 64
 
-__global__ void kernel(int *array, int size){
+__global__ void kernel(int *array, int s){
 	
-	int id = blockIdx.x * blockDim.x + threadIdx.x;
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
 
-	if (id < size) {
-		array[id] = id;
+	if (i < s) {
+		array[i] = i;
 	}
 }
 
