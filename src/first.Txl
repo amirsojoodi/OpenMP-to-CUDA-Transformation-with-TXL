@@ -4,6 +4,20 @@
 % Using Gnu C grammar
 include "c.grm"
 
+redefine postfix_expression
+	...
+    |   [SP] '<'<'< [list argument_expression] '>'>'> '( [SPON] [list argument_expression] 
+#ifdef GNU
+	    [opt dotdot]
+#endif
+	[SPOFF] ')
+end redefine
+
+redefine keys
+	...
+	dim3
+end redefine
+
 % Main function 
 function main
     replace [program]
@@ -38,7 +52,7 @@ function prependExtras
 			;
 		}
 	construct Def [function_definition_or_declaration]
-		'#define foo 10
+		'#define BLOCK_SIZE 64
     
 	export Extras
     	Extras [. Def] %[. KernelFunction] 
@@ -106,8 +120,11 @@ rule add_kernel_function
 	export Extras 
 		Extras [. KernelFunction]
 	by
-		Pragma
-		ForLoop
+		%Pragma
+		%ForLoop
+		%dim3 blockDim'(BLOCK_SIZE')':
+		%dim3 gridDim'('( E2 '- '1')'/BLOCK_SIZE '+ '1')';
+		'kernel '<'<'<'gridDim, 'blockDim'>'>'>'( ArrayName ', E2 ')';
 		Rest
 end rule
 
