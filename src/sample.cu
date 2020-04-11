@@ -27,11 +27,8 @@ int main(){
 
 	cudaMallocManaged(&array, size * sizeof(int));
 	
-	dim3 blockDime(BLOCK_SIZE);
 	// Compute ceil(size/blockSize)
-	dim3 gridDime((size - 1)/BLOCK_SIZE + 1); 
-
-	kernel<<<gridDime, blockDime>>>(array, size);	
+	kernel<<<(size - 1)/BLOCK_SIZE + 1, BLOCK_SIZE>>>(array, size);	
 	cudaDeviceSynchronize();
 	
 	// A simple validity test
