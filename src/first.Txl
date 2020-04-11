@@ -13,11 +13,6 @@ redefine postfix_expression
 	[SPOFF] ')
 end redefine
 
-redefine keys
-	...
-	dim3
-end redefine
-
 % Main function 
 function main
     replace [program]
@@ -122,9 +117,7 @@ rule add_kernel_function
 	by
 		%Pragma
 		%ForLoop
-		%dim3 blockDim'(BLOCK_SIZE')':
-		%dim3 gridDim'('( E2 '- '1')'/BLOCK_SIZE '+ '1')';
-		'kernel '<'<'<'gridDim, 'blockDim'>'>'>'( ArrayName ', E2 ')';
+		'kernel '<'<'<'( '( E2 ') '- '1')'/'BLOCK_SIZE, 'BLOCK_SIZE'>'>'>'( ArrayName ', E2 ')';
 		Rest
 end rule
 
