@@ -1,16 +1,18 @@
-% Parser for C programs
-% Jim Cordy, January 2008
+% 3 tests
+% Report
+% Introduce the problem extensively
+% Our contribution and problems
+% conclusion and result
 
-% Using Gnu C grammar
 include "c.grm"
 
-redefine postfix_expression
+redefine postfix_extension
 	...
-    |   [SP] '<'<'< [list argument_expression] '>'>'> '( [SPON] [list argument_expression] 
+    |   [SPOFF] '<'<'< [SPON] [list argument_expression] [SPOFF]'>'>'> '( [SPON] [list argument_expression] 
 #ifdef GNU
 	    [opt dotdot]
 #endif
-	[SPOFF] ')
+	')
 end redefine
 
 % Main function 
@@ -19,6 +21,8 @@ function main
 		P [program]
     export Extras [repeat function_definition_or_declaration]
        _
+	%Variable 1: list of IDs
+	%Variable 2: List of declarations
     by
     	P [findMainFunction]
 		[prependExtras]
@@ -42,19 +46,13 @@ function prependExtras
         'int 'main () 
 	    B [block]
 	    
-	construct KernelFunction [function_definition_or_declaration]
-		'void 'kernel(){
-			;
-		}
 	construct Def [function_definition_or_declaration]
 		'#define BLOCK_SIZE 64
     
 	export Extras
-    	Extras [. Def] %[. KernelFunction] 
-%
-%	construct xyz [stirnglit]
-%		_ [putp Extras]
-    by
+    	Extras [. Def]
+    
+	by
        Extras [. Main] [. Rest]
 end function
 
@@ -63,7 +61,11 @@ function doTransform
 	replace [block]
 		B [block]
     by
-		B [resolve_malloc]
+		B %[rule that look for array names]
+		%[visit every declaration in the block]
+		%Get rid of reduntant variables and sort the list
+
+		[resolve_malloc]
 		[resolve_free]
 		[add_kernel_function]
 end function
@@ -96,7 +98,6 @@ rule add_kernel_function
 	deconstruct ForLoop
 		'for (D [decl_specifiers] Init[list init_declarator+] '; Condition[conditional_expression] '; Step[opt expression_list] ) 
 			SubStatement[sub_statement]
-	%	'for ( [decl_specifiers] [list init_declarator+] '; [opt expression_list] '; [opt expression_list] ) [sub_statement]
 	deconstruct * [reference_id] Init
 		Var [id] 
 	deconstruct Condition
@@ -114,10 +115,13 @@ rule add_kernel_function
 	import  Extras [repeat function_definition_or_declaration]
 	export Extras 
 		Extras [. KernelFunction]
+	
+	construct Statement1 [declaration_or_statement]
+		'kernel '<'<'<'( '( E2 ') '- '1')'/'BLOCK_SIZE, 'BLOCK_SIZE'>'>'>'( ArrayName ', E2 ')';
 	by
 		%Pragma
 		%ForLoop
-		'kernel '<'<'<'( '( E2 ') '- '1')'/'BLOCK_SIZE, 'BLOCK_SIZE'>'>'>'( ArrayName ', E2 ')';
+		Statement1
 		'cudaDeviceSynchronize();
 		Rest
 end rule
