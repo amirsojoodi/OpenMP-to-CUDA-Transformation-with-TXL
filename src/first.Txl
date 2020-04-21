@@ -13,6 +13,10 @@ redefine postfix_extension
 	')
 end redefine
 
+define single_decl_no_semi
+    [decl_specifiers] [declarator] [opt ',]
+end define
+
 % Main function 
 function main
     replace [program]
@@ -20,6 +24,10 @@ function main
     export Extras [repeat function_definition_or_declaration]
        _
     export Ids [repeat id]
+        _
+    export ArgExpressions [list argument_expression]
+        _
+    export Declarations [list argument_declaration]
         _
     by
     	P [findMainFunction]
@@ -59,34 +67,34 @@ function doTransform
 		B [block]
     by
         B [extract_ids]
-        [test_arr_names]
+        [extract_declarations]
 		[resolve_malloc]
 		[resolve_free]
 		[add_kernel_function]
 end function
 
-function test_arr_names
-	replace [simple_statement]
-        S [simple_statement]
-    import Ids [repeat id]
-	by
-        S
-end function
-
 rule resolve_malloc
-	replace [simple_statement]
+	replace $ [simple_statement]
 		Id[id] Op[assignment_operator] CastOp[cast_operator] Expr[unary_expression]
+    import Ids [repeat id]
+    deconstruct * [id] Ids
+        Id
 	deconstruct * Expr
 		'malloc ( OrigArgs [list argument_expression] )		
 	by
-		'cudaMallocManaged(&Id, OrigArgs)
+		'cudaMallocManaged ( '& Id, OrigArgs)
 end rule
 
 rule resolve_free
-	replace [macro_call]
-		'free(MacroArgs[macro_arguments])
+	replace $ [macro_call]
+		'free ( MacroArgs [macro_arguments] )
+    deconstruct * [id] MacroArgs
+        Id [id]
+    import Ids [repeat id]
+    deconstruct * [id] Ids
+        Id
 	by
-		'cudaFree(MacroArgs)
+		'cudaFree ( MacroArgs )
 end rule
 
 rule extract_ids
@@ -112,10 +120,8 @@ rule extract_ids
 end rule
 
 rule extract_id SubStatement [sub_statement]
-    %replace $ [repeat postfix_expression]
     replace $ [repeat declaration_or_statement]
         DoS [repeat declaration_or_statement]
-		%ArrayName [id] '[ A [assignment_expression] '] 
     deconstruct * [postfix_expression] DoS
 		ArrayName [id] '[ A [assignment_expression] '] 
     import Ids [repeat id]
@@ -123,7 +129,31 @@ rule extract_id SubStatement [sub_statement]
         Ids [. ArrayName]
     by
         DoS
-        %ArrayName '[ A ']
+end rule
+
+rule extract_declarations
+    replace $ [repeat declaration_or_statement]
+        DoS [repeat declaration_or_statement]
+    deconstruct * [declaration] DoS
+        Spec [decl_specifiers] Decl [declarator] ';
+    construct ArgDecl [argument_declaration]
+        Spec Decl
+        
+    deconstruct * [id] Decl
+        Id [id]
+    import Ids [repeat id]
+    deconstruct * [id] Ids
+        Id
+    construct ArgExpr [argument_expression]
+        Id
+    import ArgExpressions [list argument_expression]
+    export ArgExpressions
+        ArgExpressions [, ArgExpr]
+    import Declarations [list argument_declaration]
+    export Declarations
+        Declarations [, ArgDecl]
+    by
+        DoS
 end rule
 
 rule add_kernel_function
@@ -145,8 +175,14 @@ rule add_kernel_function
 		E1 [shift_expression] Op [relational_operator] E2 [shift_expression]
 	deconstruct * [postfix_expression] SubStatement
 		ArrayName [id] '[ A [assignment_expression] '] 
+    import Declarations [list argument_declaration]
+    construct Size [argument_declaration]
+        'int 's
+    construct KernelArgList [list argument_declaration]
+        Declarations [, Size]
 	construct KernelFunction [function_definition_or_declaration]
-		'__global__ 'void 'kernel('int* ArrayName, 'int 's){
+		%'__global__ 'void 'kernel('int* ArrayName, 'int 's){
+		'__global__ 'void 'kernel( KernelArgList ){
             'int Var '= 'blockIdx.'x '* 'blockDim.'x '+ 'threadIdx.'x;
 
 			'if (Var < 's)
@@ -157,8 +193,13 @@ rule add_kernel_function
 	export Extras 
 		Extras [. KernelFunction]
 
+    import ArgExpressions [list argument_expression]
+    construct SizeArg [argument_expression]
+        E2
+    construct KernelCallArgList [list argument_expression]
+        ArgExpressions [, SizeArg]
     construct Statement1 [declaration_or_statement]
-		'kernel '<'<'<'( '( E2 ') '- '1')'/'BLOCK_SIZE, 'BLOCK_SIZE'>'>'>'( ArrayName ', E2 ')';
+		'kernel '<'<'<'( '( E2 ') '- '1')'/'BLOCK_SIZE, 'BLOCK_SIZE'>'>'>'( KernelCallArgList ')';
 	by
 		%Pragma
 		%ForLoop
