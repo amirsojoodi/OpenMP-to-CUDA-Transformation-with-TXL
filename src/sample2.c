@@ -15,16 +15,19 @@ int main(){
 	int *array;
 	int *array2;
     int *array3;
+	float *array4;
 	int size = SIZE;
 	array = (int *)malloc(size * sizeof(int));
 	array2 = (int *)malloc(size * sizeof(int));
 	array3 = (int *)malloc(size * sizeof(int));
+	array4 = (float *)malloc(size * sizeof(float));
 
 	#pragma omp parallel
 	for(int i = 0; i < size; i++){
 		array[i] = i;
         array2[i] = i+1;
         array2[i] = i+1;
+		array4[i] = array2[i] * array3[i];
 	}
 
 	// A simple validity test
@@ -33,6 +36,7 @@ int main(){
 	free(array);
     free(array2);
     free(array3);
+	free(array4);
 
 	return 0;
 }

@@ -1,5 +1,5 @@
-% Parser for C programs
-% Jim Cordy, January 2008
+% A Simple transformation from OpenMP to CUDA
+% Nicolas Merz, AmirHossein Sojoodi, Spring 2020
 
 % Using Gnu C grammar
 include "c.grm"
@@ -26,7 +26,7 @@ function main
     export Ids [repeat id]
         _
     export ArgExpressions [list argument_expression]
-        _
+        _ %[list argument_expression]
     export Declarations [list argument_declaration]
         _
     by
@@ -144,17 +144,36 @@ rule extract_declarations
     import Ids [repeat id]
     deconstruct * [id] Ids
         Id
-    construct ArgExpr [argument_expression]
+    construct ArgExpr [list argument_expression]
         Id
     import ArgExpressions [list argument_expression]
     export ArgExpressions
-        ArgExpressions [, ArgExpr]
+		_ [construct_arg_expressions_1 ArgExpressions ArgExpr]
+		[construct_arg_expressions_2 ArgExpressions ArgExpr]			
     import Declarations [list argument_declaration]
     export Declarations
         Declarations [, ArgDecl]
     by
         DoS
 end rule
+
+function construct_arg_expressions_2 ArgExpressions[list argument_expression] ArgExpr[list argument_expression]
+	replace [list argument_expression]
+		%
+	deconstruct ArgExpressions
+		Expressions [list argument_expression+]
+	by
+		ArgExpressions[, ArgExpr]
+end function
+
+function construct_arg_expressions_1 ArgExpressions[list argument_expression] ArgExpr[list argument_expression]
+	replace [list argument_expression]
+		%
+	deconstruct ArgExpressions
+		Empty [empty]
+	by
+		ArgExpr
+end function
 
 rule add_kernel_function
 	replace $ [repeat declaration_or_statement]
