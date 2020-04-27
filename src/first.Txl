@@ -127,8 +127,18 @@ rule extract_id SubStatement [sub_statement]
     import Ids [repeat id]
     export Ids
         Ids [. ArrayName]
+        [remove_duplicates]
     by
         DoS
+end rule
+
+rule remove_duplicates
+	replace [repeat id]
+		Id1[id] Id2[id] RestIds[repeat id]
+	where 
+		Id1 [= Id2]
+	by
+		Id1 RestIds
 end rule
 
 rule extract_declarations
@@ -200,7 +210,6 @@ rule add_kernel_function
     construct KernelArgList [list argument_declaration]
         Declarations [, Size]
 	construct KernelFunction [function_definition_or_declaration]
-		%'__global__ 'void 'kernel('int* ArrayName, 'int 's){
 		'__global__ 'void 'kernel( KernelArgList ){
             'int Var '= 'blockIdx.'x '* 'blockDim.'x '+ 'threadIdx.'x;
 
