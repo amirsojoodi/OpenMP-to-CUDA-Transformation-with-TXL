@@ -2,7 +2,11 @@
 // sample.c
 // 
 // A simple array initialization in OpenMP
-//
+// 
+// Expectations:
+//		- Create Kernel function with appropriate header
+//		- Manage allocation/deallocations
+// 
 // Project Description: A TXL transformation from OpenMP C sources to CUDA 
 // equivalent. 
 //
