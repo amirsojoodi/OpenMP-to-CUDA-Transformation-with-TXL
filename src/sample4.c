@@ -1,7 +1,7 @@
 //*****************************************************************************
-// sample3.c
+// sample4.c
 //
-// A simple array initialization in OpenMP
+// A simple program in OpenMP
 //
 // Expectations:
 //		- Create Kernel function with appropriate header
@@ -37,14 +37,15 @@ int main(){
 	float *array4;
 	int *array5;
 	double foo;
-
 	int size = SIZE;
+	
 	array1 = (int *)malloc(size * sizeof(int));
 	array2 = (int *)malloc(size * sizeof(int));
 	array3 = (double *)malloc(size * sizeof(double));
 	array4 = (float *)malloc(size * sizeof(float));
 	array5 = (int *)malloc(size * sizeof(int));	
 	foo = PI * 2;
+	
 	#pragma omp parallel
 	for(int i = 0; i < size; i++){
 		array1[i] = i;
