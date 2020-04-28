@@ -1,15 +1,16 @@
-//*******************************************************************
+//*****************************************************************************
 // sample.c
 // 
 // A simple array initialization in OpenMP
 //
-// Project Description: A TXL transformation from OpenMP C sources to
-// CUDA equivalent. 
+// Project Description: A TXL transformation from OpenMP C sources to CUDA 
+// equivalent. 
 //
+// For more information on TXL, visit: txl.ca
 // Authors: AmirHossein Sojoodi, Nicolas Merz
 // Course: ELEC-875 2020, Tom Dean
 // Queen's University
-//*******************************************************************
+//*****************************************************************************
 
 #include<stdlib.h>
 #include<omp.h>
