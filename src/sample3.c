@@ -34,8 +34,8 @@ int main(){
     double *array3;
 	float *array4;
 	float *array5;
-	float foo = 2 * PI;
-	float bar = 3 * PI;
+	float foo;
+	float bar;
 
 	int size = SIZE;
 	array1 = (int *)malloc(size * sizeof(int));
@@ -43,6 +43,9 @@ int main(){
 	array3 = (double *)malloc(size * sizeof(double));
 	array4 = (float *)malloc(size * sizeof(float));
 	array5 = (float *)malloc(size * sizeof(int));	
+
+	foo = 2 * PI;
+	bar = 3 * PI;
 
 	#pragma omp parallel
 	for(int i = 0; i < size; i++){
@@ -64,4 +67,3 @@ int main(){
 
 	return 0;
 }
-

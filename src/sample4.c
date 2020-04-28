@@ -31,37 +31,37 @@
 
 int main(){
 
-	int *array;
+	int *array1;
 	int *array2;
     double *array3;
 	float *array4;
 	int *array5;
-	double coefficient = 2;
+	double foo;
 
 	int size = SIZE;
-	array = (int *)malloc(size * sizeof(int));
+	array1 = (int *)malloc(size * sizeof(int));
 	array2 = (int *)malloc(size * sizeof(int));
 	array3 = (double *)malloc(size * sizeof(double));
 	array4 = (float *)malloc(size * sizeof(float));
-	array5 = (int *)malloc(size * sizeof(int));
-	
+	array5 = (int *)malloc(size * sizeof(int));	
+	foo = PI * 2;
+	#pragma omp parallel
+	for(int i = 0; i < size; i++){
+		array1[i] = i;
+        array2[i] = array3[i] + 1;
+		int tmp = array2[i] + 10;
+		array4[i] = foo * tmp;
+	}
+
 	for(int i = 0; i < size; i++){
 		array3[i] = 0.1;
 		array4[i] = i;
 	}
 
-	#pragma omp parallel
-	for(int i = 0; i < size; i++){
-		array[i] = i;
-        array2[i] = array3[i] + 1;
-		int tmp = array2[i] + 10;
-		array4[i] = coefficient * tmp;
-	}
-
 	// A simple validity test
-	printf("Array[%d] = %d", size - 1, array[size - 1]);
+	printf("Array[%d] = %d", size - 1, array1[size - 1]);
 
-	free(array);
+	free(array1);
     free(array2);
     free(array3);
 	free(array4);

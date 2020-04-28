@@ -1,7 +1,18 @@
-% A Simple transformation from OpenMP to CUDA
-% Nicolas Merz, AmirHossein Sojoodi, Spring 2020
+%******************************************************************************
+% Transform.txl
+%	
+% Project Description: A TXL transformation from OpenMP C sources to CUDA 
+% equivalents.
+%
+% To work with the transformer, run:
+% txl Transform.txl source.c
+%
+% For more information on TXL, visit: txl.ca
+% Authors: AmirHossein Sojoodi, Nicolas Merz
+% Course: ELEC-875 2020, Tom Dean
+% Queen's University
+%******************************************************************************
 
-% Using Gnu C grammar
 include "c.grm"
 
 redefine postfix_extension
@@ -17,7 +28,6 @@ define single_decl_no_semi
     [decl_specifiers] [declarator] [opt ',]
 end define
 
-% Main function 
 function main
     replace [program]
 		P [program]
@@ -26,7 +36,7 @@ function main
     export Ids [repeat id]
         _
     export ArgExpressions [list argument_expression]
-        _ %[list argument_expression]
+        _ 
     export Declarations [list argument_declaration]
         _
     by
@@ -56,22 +66,23 @@ function prependExtras
 		'#define BLOCK_SIZE 64
     
 	export Extras
-    	Extras [. Def]
+    	_ [. Def] [. Extras]
     by
        Extras [. Main] [. Rest]
 end function
 
 
-function doTransform
-	replace [block]
+rule doTransform
+	replace $ [block]
 		B [block]
     by
         B [extract_ids]
-        [extract_declarations]
+        [extract_array_declarations]
+        [extract_primitive_declarations]
 		[resolve_malloc]
 		[resolve_free]
 		[add_kernel_function]
-end function
+end rule
 
 rule resolve_malloc
 	replace $ [simple_statement]
@@ -98,14 +109,19 @@ rule resolve_free
 end rule
 
 rule extract_ids
-	replace $ [repeat declaration_or_statement]
+	replace [repeat declaration_or_statement]
 		Pragma [preprocessor]
 		ForLoop [for_statement]
 		Rest [repeat declaration_or_statement]
+		
 	construct PragmaStr [stringlit]
 		_ [quote Pragma]
 	where
 		PragmaStr [grep 'pragma][grep 'omp][grep 'parallel]
+	where not
+		PragmaStr [grep 'checked]
+	construct PragmaChecked [preprocessor]
+		'#pragma omp parallel checked
 	deconstruct ForLoop
 		'for (D [decl_specifiers] Init[list init_declarator+] '; Condition[conditional_expression] '; Step[opt expression_list] ) 
 			SubStatement[sub_statement]
@@ -114,41 +130,62 @@ rule extract_ids
 	deconstruct Condition
 		E1 [shift_expression] Op [relational_operator] E2 [shift_expression]
 	by
-		Pragma
-		ForLoop [extract_id SubStatement]
+		PragmaChecked
+		ForLoop [extract_id]
 		Rest
 end rule
 
-rule extract_id SubStatement [sub_statement]
-    replace $ [repeat declaration_or_statement]
-        DoS [repeat declaration_or_statement]
-    deconstruct * [postfix_expression] DoS
-		ArrayName [id] '[ A [assignment_expression] '] 
+rule extract_id 
+    replace $ [id]
+		NewVarId [id]
     import Ids [repeat id]
     export Ids
-        Ids [. ArrayName]
-        [remove_duplicates]
+        Ids [add_new_var NewVarId]
+    by
+        NewVarId
+end rule
+
+function add_new_var NewVarId [id]
+	replace [repeat id]
+		Ids [repeat id]
+	where all
+		NewVarId [~= each Ids]
+	by
+		Ids [. NewVarId]
+end function
+
+rule extract_primitive_declarations
+    replace $ [declaration]
+        DoS [declaration]
+    deconstruct * [declaration] DoS
+        Spec [type_specifier] Decl [type_specifier] ';
+    construct ArgDecl [argument_declaration]
+        Spec Decl
+    deconstruct * [id] Decl
+        Id [id]
+    import Ids [repeat id]
+    deconstruct * [id] Ids
+        Id
+    construct ArgExpr [list argument_expression]
+        Id
+    import ArgExpressions [list argument_expression]
+    export ArgExpressions
+		_ [construct_arg_expressions_1 ArgExpressions ArgExpr]
+		[construct_arg_expressions_2 ArgExpressions ArgExpr]			
+    import Declarations [list argument_declaration]
+    export Declarations
+        Declarations [, ArgDecl]
     by
         DoS
 end rule
 
-rule remove_duplicates
-	replace [repeat id]
-		Id1[id] Id2[id] RestIds[repeat id]
-	where 
-		Id1 [= Id2]
-	by
-		Id1 RestIds
-end rule
-
-rule extract_declarations
-    replace $ [repeat declaration_or_statement]
-        DoS [repeat declaration_or_statement]
+rule extract_array_declarations
+    replace $ [declaration]
+        DoS [declaration]
     deconstruct * [declaration] DoS
         Spec [decl_specifiers] Decl [declarator] ';
     construct ArgDecl [argument_declaration]
         Spec Decl
-        
     deconstruct * [id] Decl
         Id [id]
     import Ids [repeat id]
@@ -193,11 +230,10 @@ rule add_kernel_function
 	construct PragmaStr [stringlit]
 		_ [quote Pragma]
 	where
-		PragmaStr [grep 'pragma][grep 'omp][grep 'parallel]
+		PragmaStr [grep 'pragma][grep 'omp][grep 'parallel][grep 'checked]
 	deconstruct ForLoop
 		'for (D [decl_specifiers] Init[list init_declarator+] '; Condition[conditional_expression] '; Step[opt expression_list] ) 
 			SubStatement[sub_statement]
-	%	'for ( [decl_specifiers] [list init_declarator+] '; [opt expression_list] '; [opt expression_list] ) [sub_statement]
 	deconstruct * [reference_id] Init
 		Var [id] 
 	deconstruct Condition
@@ -235,13 +271,6 @@ rule add_kernel_function
 		'cudaDeviceSynchronize();
 		Rest
 end rule
-
-%(rule resolve_pragma_omp_for
-	replace [declaration_or_statement]
-		'#pragma omp parallel
-	by
-		'#pragma
-end rule)%
 
 
 
